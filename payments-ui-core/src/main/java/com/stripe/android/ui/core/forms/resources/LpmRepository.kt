@@ -43,6 +43,7 @@ import com.stripe.android.paymentsheet.forms.SofortRequirement
 import com.stripe.android.paymentsheet.forms.SwishRequirement
 import com.stripe.android.paymentsheet.forms.USBankAccountRequirement
 import com.stripe.android.paymentsheet.forms.UpiRequirement
+import com.stripe.android.paymentsheet.forms.WeChatPayRequirement
 import com.stripe.android.paymentsheet.forms.ZipRequirement
 import com.stripe.android.ui.core.BillingDetailsCollectionConfiguration
 import com.stripe.android.ui.core.R
@@ -622,6 +623,17 @@ class LpmRepository constructor(
             darkThemeIconUrl = sharedDataSpec.selectorIcon?.darkThemePng,
             tintIconOnSelection = false,
             requirement = SwishRequirement,
+            formSpec = LayoutSpec(sharedDataSpec.fields),
+        )
+        PaymentMethod.Type.WeChatPay.code -> SupportedPaymentMethod(
+            code = "wechat_pay",
+            requiresMandate = false,
+            displayNameResource = R.string.stripe_paymentsheet_payment_method_wechat,
+            iconResource = R.drawable.stripe_ic_paymentsheet_pm_wechat_pay,
+            lightThemeIconUrl = sharedDataSpec.selectorIcon?.lightThemePng,
+            darkThemeIconUrl = sharedDataSpec.selectorIcon?.darkThemePng,
+            tintIconOnSelection = false,
+            requirement = WeChatPayRequirement,
             formSpec = LayoutSpec(sharedDataSpec.fields),
         )
         else -> null
