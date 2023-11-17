@@ -188,6 +188,7 @@ internal class DefaultIntentConfirmationInterceptor @Inject constructor(
                 add("autopm")
             }
         }
+
         val params = paymentMethodCreateParams.copy(
             productUsage = productUsage,
         )
@@ -293,7 +294,12 @@ internal class DefaultIntentConfirmationInterceptor @Inject constructor(
                 NextStep.HandleNextAction(clientSecret)
             } else {
                 DeferredIntentValidator.validate(intent, intentConfiguration, isFlowController)
-                createConfirmStep(clientSecret, shippingValues, paymentMethod, isDeferred = true)
+                createConfirmStep(
+                    clientSecret = clientSecret,
+                    shippingValues = shippingValues,
+                    paymentMethod = paymentMethod,
+                    isDeferred = true
+                )
             }
         }.getOrElse { error ->
             NextStep.Fail(
