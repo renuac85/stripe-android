@@ -51,7 +51,6 @@ import com.stripe.android.paymentsheet.example.R
 import com.stripe.android.paymentsheet.example.samples.ui.customersheet.playground.CustomerSheetPlaygroundViewAction.UpdateMerchantCountryCode
 import com.stripe.android.paymentsheet.example.samples.ui.shared.MultiToggleButton
 import com.stripe.android.paymentsheet.example.samples.ui.shared.PaymentSheetExampleTheme
-import com.stripe.android.paymentsheet.example.utils.rememberDrawablePainter
 import com.stripe.android.paymentsheet.rememberPaymentSheet
 import java.util.Locale
 
@@ -188,11 +187,9 @@ class CustomerSheetPlaygroundActivity : AppCompatActivity() {
                     onClick = onUpdateDefaultPaymentMethod,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        state.selection?.paymentOption?.icon()?.let {
+                        state.selection?.paymentOption?.let {
                             Image(
-                                painter = rememberDrawablePainter(
-                                    drawable = it
-                                ),
+                                painter = it.iconPainter,
                                 contentDescription = "Payment Method Icon",
                                 modifier = Modifier.height(32.dp)
                             )
