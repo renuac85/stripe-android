@@ -55,6 +55,7 @@ import com.stripe.android.paymentsheet.repositories.CustomerRepository
 import com.stripe.android.paymentsheet.state.GooglePayState
 import com.stripe.android.paymentsheet.state.PaymentSheetLoader
 import com.stripe.android.paymentsheet.state.PaymentSheetState
+import com.stripe.android.paymentsheet.state.WalletsProcessingState
 import com.stripe.android.paymentsheet.state.WalletsState
 import com.stripe.android.paymentsheet.state.asPaymentSheetLoadingException
 import com.stripe.android.paymentsheet.ui.HeaderTextFactory
@@ -69,12 +70,15 @@ import com.stripe.android.utils.requireApplication
 import dagger.Lazy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.WhileSubscribed
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -228,6 +232,17 @@ internal class PaymentSheetViewModel @Inject internal constructor(
         initialValue = null,
     )
 
+    override val walletsProcessingState: StateFlow<WalletsProcessingState?> = combine(
+        processing,
+        buyButtonState,
+        selection,
+        transform = WalletsProcessingState::create,
+    ).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5.seconds),
+        initialValue = null,
+    )
+
     override val walletsState: StateFlow<WalletsState?> = combineStateFlows(
         linkHandler.isLinkEnabled,
         linkEmailFlow,
@@ -259,6 +274,15 @@ internal class PaymentSheetViewModel @Inject internal constructor(
         viewModelScope.launch {
             linkHandler.processingState.collect { processingState ->
                 handleLinkProcessingState(processingState)
+            }
+        }
+
+        viewModelScope.launch {
+            walletsProcessingState.collect {
+                if (it == WalletsProcessingState.Finished) {
+                    delay(2.seconds)
+                    _paymentSheetResult.tryEmit(PaymentSheetResult.Completed)
+                }
             }
         }
 
@@ -675,7 +699,9 @@ internal class PaymentSheetViewModel @Inject internal constructor(
             _paymentSheetResult.tryEmit(PaymentSheetResult.Completed)
         } else {
             viewState.value = PaymentSheetViewState.FinishProcessing {
-                _paymentSheetResult.tryEmit(PaymentSheetResult.Completed)
+                if (walletsProcessingState.value == null) {
+                    _paymentSheetResult.tryEmit(PaymentSheetResult.Completed)
+                }
             }
         }
     }

@@ -5,28 +5,45 @@ package com.stripe.android.paymentsheet.ui
 import androidx.annotation.RestrictTo
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidViewBinding
+import com.stripe.android.common.ui.LoadingIndicator
 import com.stripe.android.link.ui.LinkButton
 import com.stripe.android.paymentsheet.R
 import com.stripe.android.paymentsheet.databinding.StripeFragmentPaymentOptionsPrimaryButtonBinding
 import com.stripe.android.paymentsheet.databinding.StripeFragmentPaymentSheetPrimaryButtonBinding
+import com.stripe.android.paymentsheet.model.MandateText
+import com.stripe.android.paymentsheet.navigation.PaymentSheetScreen
 import com.stripe.android.paymentsheet.navigation.topContentPadding
+import com.stripe.android.paymentsheet.state.WalletsProcessingState
 import com.stripe.android.paymentsheet.state.WalletsState
 import com.stripe.android.paymentsheet.ui.PaymentSheetFlowType.Complete
 import com.stripe.android.paymentsheet.ui.PaymentSheetFlowType.Custom
@@ -88,9 +105,71 @@ internal fun PaymentSheetScreenContent(
     val currentScreen by viewModel.currentScreen.collectAsState()
     val mandateText by viewModel.mandateText.collectAsState()
 
-    val horizontalPadding = dimensionResource(R.dimen.stripe_paymentsheet_outer_spacing_horizontal)
+    val walletsProcessingState by viewModel.walletsProcessingState.collectAsState()
+    val processingAlpha by animateFloatAsState(
+        targetValue = if (walletsProcessingState != null) 1f else 0f,
+        label = "ProcessingAlpha",
+    )
+
+    val density = LocalDensity.current
+    var contentHeight by remember { mutableStateOf(0.dp) }
 
     Column(modifier) {
+        Box {
+            PaymentSheetContent2(
+                viewModel = viewModel,
+                type = type,
+                headerText = headerText,
+                walletsState = walletsState,
+                error = error,
+                currentScreen = currentScreen,
+                mandateText = mandateText,
+                modifier = Modifier.onGloballyPositioned {
+                    contentHeight = with(density) { it.size.height.toDp() }
+                },
+            )
+
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .graphicsLayer { alpha = processingAlpha }
+                    .requiredHeight(contentHeight)
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colors.surface),
+            ) {
+                when (walletsProcessingState) {
+                    WalletsProcessingState.Active -> {
+                        LoadingIndicator()
+                    }
+                    WalletsProcessingState.Finished, null -> {
+                        Icon(
+                            painter = painterResource(R.drawable.stripe_ic_paymentsheet_googlepay_primary_button_checkmark),
+                            tint = MaterialTheme.colors.onSurface,
+                            contentDescription = null,
+                        )
+                    }
+                }
+            }
+        }
+
+        PaymentSheetContentPadding()
+    }
+}
+
+@Composable
+private fun PaymentSheetContent2(
+    viewModel: BaseSheetViewModel,
+    type: PaymentSheetFlowType,
+    headerText: Int?,
+    walletsState: WalletsState?,
+    error: String?,
+    currentScreen: PaymentSheetScreen,
+    mandateText: MandateText?,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier) {
+        val horizontalPadding = dimensionResource(R.dimen.stripe_paymentsheet_outer_spacing_horizontal)
+
         headerText?.let { text ->
             H4Text(
                 text = stringResource(text),
@@ -119,14 +198,14 @@ internal fun PaymentSheetScreenContent(
 
         if (mandateText?.showAbovePrimaryButton == true) {
             Mandate(
-                mandateText = mandateText?.text,
+                mandateText = mandateText.text,
                 modifier = Modifier.padding(horizontal = horizontalPadding),
             )
         }
 
-        error?.let { error ->
+        error?.let {
             ErrorMessage(
-                error = error,
+                error = it,
                 modifier = Modifier.padding(vertical = 2.dp, horizontal = horizontalPadding),
             )
         }
@@ -148,14 +227,12 @@ internal fun PaymentSheetScreenContent(
 
         if (mandateText?.showAbovePrimaryButton == false) {
             Mandate(
-                mandateText = mandateText?.text,
+                mandateText = mandateText.text,
                 modifier = Modifier
                     .padding(top = 8.dp)
                     .padding(horizontal = horizontalPadding),
             )
         }
-
-        PaymentSheetContentPadding()
     }
 }
 
