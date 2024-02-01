@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -35,7 +36,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidViewBinding
-import com.stripe.android.common.ui.LoadingIndicator
+import com.stripe.android.common.ui.CircularProgressIndicator
 import com.stripe.android.link.ui.LinkButton
 import com.stripe.android.paymentsheet.R
 import com.stripe.android.paymentsheet.databinding.StripeFragmentPaymentOptionsPrimaryButtonBinding
@@ -139,13 +140,18 @@ internal fun PaymentSheetScreenContent(
             ) {
                 when (walletsProcessingState) {
                     WalletsProcessingState.Active -> {
-                        LoadingIndicator()
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colors.onSurface,
+                            strokeWidth = dimensionResource(R.dimen.stripe_paymentsheet_loading_indicator_stroke_width),
+                            modifier = Modifier.requiredSize(48.dp)
+                        )
                     }
                     WalletsProcessingState.Finished, null -> {
                         Icon(
                             painter = painterResource(R.drawable.stripe_ic_paymentsheet_googlepay_primary_button_checkmark),
-                            tint = MaterialTheme.colors.onSurface,
+                            tint = PrimaryButtonTheme.colors.successBackground,
                             contentDescription = null,
+                            modifier = Modifier.requiredSize(48.dp),
                         )
                     }
                 }
