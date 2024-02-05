@@ -70,6 +70,7 @@ ext.versions = [
         turbine                     : '1.0.0',
         uiAutomator                 : '2.2.0',
         zxing                       : '3.5.2',
+        microblinkCapture           : '1.2.0',
 ]
 
 ext.buildLibs = [
@@ -161,6 +162,7 @@ ext.libs = [
         material                            : "com.google.android.material:material:${versions.material}",
         mavericks                           : "com.airbnb.android:mavericks:${versions.mavericks}",
         mavericksCompose                    : "com.airbnb.android:mavericks-compose:${versions.mavericks}",
+        microblinkCapture                   : "com.microblink:capture-core:${versions.microblinkCapture}",
         okio                                : "com.squareup.okio:okio:${versions.okio}",
         payButtonCompose                    : "com.google.pay.button:compose-pay-button:${versions.payButtonCompose}",
         places                              : "com.google.android.libraries.places:places:${versions.places}",
