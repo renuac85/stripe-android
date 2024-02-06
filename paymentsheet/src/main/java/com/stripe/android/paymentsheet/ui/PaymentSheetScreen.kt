@@ -26,7 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -133,10 +133,10 @@ internal fun PaymentSheetScreenContent(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .graphicsLayer { alpha = processingAlpha }
                     .requiredHeight(contentHeight)
                     .fillMaxWidth()
-                    .background(MaterialTheme.colors.surface),
+                    .alpha(processingAlpha)
+                    .background(MaterialTheme.colors.surface.copy(alpha = 0.9f)),
             ) {
                 when (walletsProcessingState) {
                     WalletsProcessingState.Active -> {
