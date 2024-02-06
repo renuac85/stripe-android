@@ -8,6 +8,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -117,7 +119,7 @@ internal fun PaymentSheetScreenContent(
 
     Column(modifier) {
         Box {
-            PaymentSheetContent2(
+            PaymentSheetContent(
                 viewModel = viewModel,
                 type = type,
                 headerText = headerText,
@@ -138,23 +140,7 @@ internal fun PaymentSheetScreenContent(
                     .alpha(processingAlpha)
                     .background(MaterialTheme.colors.surface.copy(alpha = 0.9f)),
             ) {
-                when (walletsProcessingState) {
-                    WalletsProcessingState.Active -> {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colors.onSurface,
-                            strokeWidth = dimensionResource(R.dimen.stripe_paymentsheet_loading_indicator_stroke_width),
-                            modifier = Modifier.requiredSize(48.dp)
-                        )
-                    }
-                    WalletsProcessingState.Finished, null -> {
-                        Icon(
-                            painter = painterResource(R.drawable.stripe_ic_paymentsheet_googlepay_primary_button_checkmark),
-                            tint = PrimaryButtonTheme.colors.successBackground,
-                            contentDescription = null,
-                            modifier = Modifier.requiredSize(48.dp),
-                        )
-                    }
-                }
+                ProgressOverlay(walletsProcessingState)
             }
         }
 
@@ -162,8 +148,38 @@ internal fun PaymentSheetScreenContent(
     }
 }
 
+@Suppress("UnusedReceiverParameter")
 @Composable
-private fun PaymentSheetContent2(
+private fun BoxScope.ProgressOverlay(walletsProcessingState: WalletsProcessingState?) {
+    val isProcessing = remember(walletsProcessingState) {
+        walletsProcessingState == WalletsProcessingState.Finished
+    }
+
+    val checkmarkAlpha by animateFloatAsState(
+        targetValue = if (isProcessing) 1f else 0f,
+        label = "CheckmarkIconAlpha",
+    )
+
+    CircularProgressIndicator(
+        color = MaterialTheme.colors.onSurface,
+        strokeWidth = dimensionResource(R.dimen.stripe_paymentsheet_loading_indicator_stroke_width),
+        modifier = Modifier
+            .requiredSize(48.dp)
+            .graphicsLayer { alpha = 1f - checkmarkAlpha },
+    )
+
+    Icon(
+        painter = painterResource(R.drawable.stripe_ic_paymentsheet_googlepay_primary_button_checkmark),
+        tint = MaterialTheme.colors.onSurface,
+        contentDescription = null,
+        modifier = Modifier
+            .requiredSize(48.dp)
+            .graphicsLayer { alpha = checkmarkAlpha },
+    )
+}
+
+@Composable
+private fun PaymentSheetContent(
     viewModel: BaseSheetViewModel,
     type: PaymentSheetFlowType,
     headerText: Int?,
