@@ -105,6 +105,7 @@ class PaymentAuthWebViewActivity : AppCompatActivity() {
         viewBinding.webView.webChromeClient = PaymentAuthWebChromeClient(this, logger)
 
         viewModel.logStart()
+
         viewBinding.webView.loadUrl(
             args.url,
             viewModel.extraHeaders
