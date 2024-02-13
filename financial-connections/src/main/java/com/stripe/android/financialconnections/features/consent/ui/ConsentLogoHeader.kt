@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -201,14 +202,15 @@ private fun AnimatedDotsWithFixedGradient(
 
 @Composable
 private fun Logo(imageBitmap: ImageBitmap) {
+    val shape = RoundedCornerShape(18.dp)
+
     Image(
         bitmap = imageBitmap,
         contentDescription = null,
         modifier = Modifier
-            .width(72.dp)
-            .height(72.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .shadow(elevation = 50.dp)
+            .size(72.dp)
+            .shadow(8.dp, shape)
+            .clip(shape)
     )
 }
 
