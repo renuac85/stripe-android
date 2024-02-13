@@ -54,7 +54,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.stripe.android.common.ui.LoadingIndicator
-import com.stripe.android.core.strings.ResolvableString
 import com.stripe.android.paymentsheet.R
 import com.stripe.android.uicore.StripeTheme
 import kotlinx.coroutines.delay
@@ -72,11 +71,11 @@ private const val RIGHT_ALIGNED = 1f
 private const val CENTER_ALIGNED = 0f
 
 internal sealed interface PrimaryButtonProcessingState {
-    data class Idle(val error: ResolvableString?) : PrimaryButtonProcessingState
+    data object Idle : PrimaryButtonProcessingState
 
-    object Processing : PrimaryButtonProcessingState
+    data object Processing : PrimaryButtonProcessingState
 
-    object Completed : PrimaryButtonProcessingState
+    data object Completed : PrimaryButtonProcessingState
 }
 
 @Composable
@@ -84,7 +83,7 @@ internal fun PrimaryButton(
     label: String,
     locked: Boolean,
     enabled: Boolean,
-    processingState: PrimaryButtonProcessingState = PrimaryButtonProcessingState.Idle(null),
+    processingState: PrimaryButtonProcessingState = PrimaryButtonProcessingState.Idle,
     onProcessingCompleted: () -> Unit = {},
     onClick: () -> Unit,
 ) {
@@ -290,7 +289,7 @@ private fun BoxScope.AnimatedCompleteProcessing(
 @Preview(showBackground = true)
 private fun PrimaryButtonPreview() {
     var processingState by remember {
-        mutableStateOf<PrimaryButtonProcessingState>(PrimaryButtonProcessingState.Idle(null))
+        mutableStateOf<PrimaryButtonProcessingState>(PrimaryButtonProcessingState.Idle)
     }
 
     StripeTheme {
@@ -299,7 +298,7 @@ private fun PrimaryButtonPreview() {
                 RadioButton(
                     selected = processingState is PrimaryButtonProcessingState.Idle,
                     onClick = {
-                        processingState = PrimaryButtonProcessingState.Idle(null)
+                        processingState = PrimaryButtonProcessingState.Idle
                     }
                 )
                 Text(text = "Idle")

@@ -624,13 +624,13 @@ internal class PaymentSheetViewModelTest {
     }
 
     @Test
-    fun `On checkout clear the previous view state error`() = runTest {
+    fun `On checkout clear the previous view state error`() = runTest(UnconfinedTestDispatcher()) {
         val viewModel = createViewModel()
         viewModel.checkoutIdentifier = CheckoutIdentifier.SheetTopGooglePay
 
         turbineScope {
             val googlePayButtonTurbine = viewModel.googlePayButtonState.testIn(this)
-            val buyButtonTurbine = viewModel.buyButtonState.testIn(this)
+            val buyButtonTurbine = viewModel.primaryButtonState.testIn(this)
 
             assertThat(googlePayButtonTurbine.awaitItem())
                 .isEqualTo(PaymentSheetViewState.Reset(null))
@@ -639,7 +639,7 @@ internal class PaymentSheetViewModelTest {
 
             googlePayButtonTurbine.expectNoEvents()
             assertThat(buyButtonTurbine.awaitItem())
-                .isEqualTo(PaymentSheetViewState.StartProcessing)
+                .isEqualTo(PrimaryButton.State.StartProcessing)
 
             googlePayButtonTurbine.cancel()
             buyButtonTurbine.cancel()

@@ -17,19 +17,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidViewBinding
 import com.stripe.android.link.ui.LinkButton
 import com.stripe.android.paymentsheet.R
-import com.stripe.android.paymentsheet.databinding.StripeFragmentPaymentOptionsPrimaryButtonBinding
-import com.stripe.android.paymentsheet.databinding.StripeFragmentPaymentSheetPrimaryButtonBinding
+import com.stripe.android.paymentsheet.model.PaymentSheetViewState
 import com.stripe.android.paymentsheet.navigation.topContentPadding
 import com.stripe.android.paymentsheet.state.WalletsState
-import com.stripe.android.paymentsheet.ui.PaymentSheetFlowType.Complete
-import com.stripe.android.paymentsheet.ui.PaymentSheetFlowType.Custom
 import com.stripe.android.paymentsheet.utils.PaymentSheetContentPadding
 import com.stripe.android.paymentsheet.viewmodels.BaseSheetViewModel
 import com.stripe.android.ui.core.elements.H4Text
@@ -37,7 +32,6 @@ import com.stripe.android.ui.core.elements.H4Text
 @Composable
 internal fun PaymentSheetScreen(
     viewModel: BaseSheetViewModel,
-    type: PaymentSheetFlowType,
     modifier: Modifier = Modifier,
 ) {
     val contentVisible by viewModel.contentVisible.collectAsState()
@@ -57,7 +51,7 @@ internal fun PaymentSheetScreen(
         },
         content = {
             AnimatedVisibility(visible = contentVisible) {
-                PaymentSheetScreenContent(viewModel, type)
+                PaymentSheetScreenContent(viewModel)
             }
         },
         modifier = modifier,
@@ -79,7 +73,6 @@ private fun DismissKeyboardOnProcessing(processing: Boolean) {
 @Composable
 internal fun PaymentSheetScreenContent(
     viewModel: BaseSheetViewModel,
-    type: PaymentSheetFlowType,
     modifier: Modifier = Modifier,
 ) {
     val headerText by viewModel.headerText.collectAsState(null)
@@ -131,20 +124,7 @@ internal fun PaymentSheetScreenContent(
             )
         }
 
-        when (type) {
-            Complete -> {
-                AndroidViewBinding(
-                    factory = StripeFragmentPaymentSheetPrimaryButtonBinding::inflate,
-                    modifier = Modifier.testTag(PAYMENT_SHEET_PRIMARY_BUTTON_TEST_TAG),
-                )
-            }
-            Custom -> {
-                AndroidViewBinding(
-                    factory = StripeFragmentPaymentOptionsPrimaryButtonBinding::inflate,
-                    modifier = Modifier.testTag(PAYMENT_SHEET_PRIMARY_BUTTON_TEST_TAG),
-                )
-            }
-        }
+        PaymentSheetPrimaryButton(viewModel)
 
         if (mandateText?.showAbovePrimaryButton == false) {
             Mandate(
@@ -171,7 +151,13 @@ internal fun Wallet(
     Column(modifier = modifier.padding(horizontal = padding)) {
         state.googlePay?.let { googlePay ->
             GooglePayButton(
-                state = googlePay.buttonState?.convert(),
+                state = when (val primaryButtonState = googlePay.buttonState) {
+                    null,
+                    is PaymentSheetViewState.Reset -> PrimaryButton.State.Ready
+                    is PaymentSheetViewState.StartProcessing -> PrimaryButton.State.StartProcessing
+                    is PaymentSheetViewState.FinishProcessing ->
+                        PrimaryButton.State.FinishProcessing(primaryButtonState.onComplete)
+                },
                 allowCreditCards = googlePay.allowCreditCards,
                 buttonType = googlePay.buttonType,
                 billingAddressParameters = googlePay.billingAddressParameters,
@@ -203,6 +189,40 @@ internal fun Wallet(
 
         val text = stringResource(state.dividerTextResource)
         WalletsDivider(text)
+    }
+}
+
+@Composable
+private fun PaymentSheetPrimaryButton(viewModel: BaseSheetViewModel) {
+    val primaryButtonState by viewModel.primaryButtonState.collectAsState()
+    val primaryButtonUiState by viewModel.primaryButtonUiState.collectAsState()
+
+    primaryButtonUiState?.let { uiState ->
+        val state = primaryButtonState
+
+        PrimaryButton(
+            label = uiState.label,
+            locked = uiState.lockVisible,
+            enabled = uiState.enabled,
+            processingState = state.processingState,
+            onClick = uiState.onClick,
+            onProcessingCompleted = state::onProcessingComplete
+        )
+    }
+}
+
+private val PrimaryButton.State?.processingState: PrimaryButtonProcessingState
+    get() = when (this) {
+        null,
+        is PrimaryButton.State.Ready -> PrimaryButtonProcessingState.Idle
+        is PrimaryButton.State.StartProcessing -> PrimaryButtonProcessingState.Processing
+        is PrimaryButton.State.FinishProcessing -> PrimaryButtonProcessingState.Completed
+    }
+
+private fun PrimaryButton.State?.onProcessingComplete() {
+    when (this) {
+        is PrimaryButton.State.FinishProcessing -> onComplete()
+        else -> Unit
     }
 }
 
