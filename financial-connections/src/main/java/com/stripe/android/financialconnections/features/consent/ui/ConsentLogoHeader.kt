@@ -12,9 +12,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,6 +47,10 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import com.stripe.android.financialconnections.ui.LocalImageLoader
 
+private val LogoSize = 72.dp
+private val DotsContainerHeight = 6.dp
+private val DotsContainerWidth = 32.dp
+
 @Composable
 @Suppress("MagicNumber")
 internal fun ConsentLogoHeader(
@@ -65,35 +69,53 @@ internal fun ConsentLogoHeader(
         loadBitmaps(logos, bitmapLoadSize, isVisible)
     }
 
-    Box(modifier = modifier.height(72.dp)) {
+    Box(modifier = modifier.height(LogoSize)) {
         AnimatedVisibility(
             visible = isVisible.value,
             enter = fadeIn(animationSpec = tween(durationMillis = 500)), // Customize duration as needed
             modifier = modifier.matchParentSize()
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                if (images.all { it != null }) {
-                    images.filterNotNull().forEachIndexed { index, imageBitmap ->
-                        Logo(imageBitmap)
-                        if (index != images.lastIndex) {
-                            images[index + 1]?.let { nextImage ->
-                                AnimatedDotsWithFixedGradient(
-                                    startColor = getPrevalentColorCloseToDots(
-                                        imageBitmap.asAndroidBitmap(),
-                                        startSide = true
-                                    ),
-                                    endColor = getPrevalentColorCloseToDots(
-                                        nextImage.asAndroidBitmap(),
-                                        startSide = false
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
+            val logoImages = remember(images) { images.filterNotNull() }
+
+            Box(contentAlignment = Alignment.Center) {
+                BackgroundRow(images = logoImages)
+                ForegroundRow(images = logoImages)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BackgroundRow(images: List<ImageBitmap>) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        for ((index, image) in images.withIndex()) {
+            Spacer(modifier = Modifier.width(LogoSize))
+
+            if (index != images.lastIndex) {
+                val nextImage = images[index + 1]
+                AnimatedDotsWithFixedGradient(
+                    startColor = getPrevalentColorCloseToDots(
+                        bitmap = image.asAndroidBitmap(),
+                        startSide = true,
+                    ),
+                    endColor = getPrevalentColorCloseToDots(
+                        bitmap = nextImage.asAndroidBitmap(),
+                        startSide = false,
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ForegroundRow(images: List<ImageBitmap>) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        for ((index, image) in images.withIndex()) {
+            Logo(image)
+
+            if (index != images.lastIndex) {
+                Spacer(modifier = Modifier.width(DotsContainerWidth))
             }
         }
     }
@@ -169,8 +191,8 @@ private fun AnimatedDotsWithFixedGradient(
 
     Box(
         modifier = modifier
-            .width(32.dp)
-            .height(6.dp)
+            .width(DotsContainerWidth)
+            .height(DotsContainerHeight)
             .background(Color.White)
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
@@ -208,7 +230,7 @@ private fun Logo(imageBitmap: ImageBitmap) {
         bitmap = imageBitmap,
         contentDescription = null,
         modifier = Modifier
-            .size(72.dp)
+            .size(LogoSize)
             .shadow(8.dp, shape)
             .clip(shape)
     )
